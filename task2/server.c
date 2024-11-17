@@ -3,8 +3,20 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <signal.h>
+#include <sys/wait.h>
 
-#define PORT 2828
+#define PORT 1030
+
+void sigchild_handler(int signo){
+
+   int status;
+   pid_t pid;
+
+   while((pid = waitpid(-1, &status, WNOHANG)) > 0){
+      printf("child process %d terminated\n", pid);
+   }
+}
 
 void handle_request(int nfd)
 {
@@ -22,7 +34,8 @@ void handle_request(int nfd)
 
    while ((num = getline(&line, &size, network)) >= 0)
    {
-      printf("%s", line);
+      write(nfd, line, num);
+      printf("writing back to cilent\n");
    }
 
    free(line);
@@ -37,7 +50,21 @@ void run_service(int fd)
       if (nfd != -1)
       {
          printf("Connection established\n");
-         handle_request(nfd);
+
+         pid_t pid = fork();
+         if (pid ==0){
+            close(fd);
+            handle_request(nfd);
+            exit(0);
+
+         }else if (pid > 0){
+
+            close(nfd);  
+         }else{
+            perror("fork");
+            close(nfd);
+         }
+         
          printf("Connection closed\n");
       }
    }
@@ -45,6 +72,8 @@ void run_service(int fd)
 
 int main(void)
 {
+   signal(SIGCHLD, sigchild_handler);
+
    int fd = create_service(PORT);
 
    if (fd == -1)

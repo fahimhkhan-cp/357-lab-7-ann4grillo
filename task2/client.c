@@ -3,8 +3,9 @@
 #include <stdlib.h>
 #include <netdb.h>
 #include <unistd.h>
+#include <string.h>
 
-#define PORT 2828
+#define PORT 1030
 
 #define MIN_ARGS 2
 #define MAX_ARGS 2
@@ -31,13 +32,19 @@ void send_request(int fd)
    char *line = NULL;
    size_t size;
    ssize_t num;
+   char buffer[1024];
 
    while ((num = getline(&line, &size, stdin)) >= 0)
    {
       write(fd, line, num);
+
+      read(fd, buffer, sizeof(buffer));
+      printf("%s\n", buffer);
+      memset(buffer, 0, sizeof(buffer));
    }
 
    free(line);
+   
 }
 
 int connect_to_server(struct hostent *host_entry)

@@ -23,6 +23,5 @@ server.o : server.c net.h
 net.o : net.c net.h
 	$(CC) $(CFLAGS) -c net.c
 
-
 clean :
 	rm *.o $(PROGS) core
